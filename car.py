@@ -69,10 +69,13 @@ def set_dc_motor(speed, direction):
 # 서보 모터의 각도 초기화 -> 실제 모터도 90도로 세팅해야 함
 angle = 90
 set_servo_angle(angle)
+moter_speed = 50
 
 try:
     print("Use arrow keys to control. Press '0' to reset servo angle to 90.")
     while True:
+        
+        set_dc_motor(30, "forward")
         # 0 -> 90도로 설정
         if keyboard.is_pressed('0'):
             angle = 90  # Immediately set angle to 90
@@ -81,13 +84,18 @@ try:
             time.sleep(0.1)
 
         # DC모터 제어
-        # up -> 속도 50, 전진
+        # up -> 속도., 전진
         if keyboard.is_pressed('up'):
-            set_dc_motor(50, "forward")  # set_dc_motor(속도, 방향("forward" or "backward"))
+            # 속도 조절
+            if keyboard.is_pressed('w'):
+                moter_speed += 10
+            elif keyboard.is_pressed('d'):
+                moter_speed -= 10
+            set_dc_motor(moter_speed, "forward")  # set_dc_motor(속도, 방향("forward" or "backward"))
             print("DC motor moving forward...")
-        # down -> 속도 50, 후진
+        # down -> 속도, 후진
         elif keyboard.is_pressed('down'):
-            set_dc_motor(50, "backward")  # set_dc_motor(속도, 방향("forward" or "backward"))
+            set_dc_motor(moter_speed, "backward")  # set_dc_motor(속도, 방향("forward" or "backward"))
             print("DC motor moving backward...")
             
         else:
@@ -107,10 +115,12 @@ try:
                 set_servo_angle(angle)
             print(f"현제 각도 : {angle}도")
 
-        time.sleep(0.05) # CPU 과부하 방지를 위한 짧은 지연
+
+        time.sleep(0.05) # CPU 과부하 방지를 위한 짧은 지연, 인간의 입력 속도에 맞춤
 
 finally:
     # PWM 정지 및 GPIO 정리
     servo.stop()
     dc_motor_pwm.stop()
     GPIO.cleanup()
+
