@@ -3,6 +3,7 @@ import time
 import subprocess
 import keyboard
 import cv2
+import threading
 
 # sudo 비밀번호를 변수로 설정
 sudo_password = " "
@@ -21,7 +22,6 @@ except subprocess.CalledProcessError:
     run_command("apt update && apt install -y busybox")
 
 # devmem 명령어 정의
-# devmem은 리눅스 환경에서 메모리 맵에 직접 접근하기 위해 사용하는 명령어
 commands = [
     "busybox devmem 0x700031fc 32 0x45",
     "busybox devmem 0x6000d504 32 0x2",
@@ -68,62 +68,63 @@ def set_dc_motor(speed, direction):
     dc_motor_pwm.ChangeDutyCycle(speed)
 
 # 영상 촬영
-cap = cv2.VideoCapture(0)
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = None
-recoding = None
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+def video_capture():
+    cap = cv2.VideoCapture(0)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+    out = None
+    recoding = False
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-# 서보 모터의 각도 초기화 -> 실제 모터도 90도로 세팅해야 함
-angle = 90
-set_servo_angle(angle)
-
-try:
-    print("Use arrow keys to control. Press '0' to reset servo angle to 90.")
     while True:
         ret, frame = cap.read()
         if not ret or frame is None:
             break
         
-        cv2.imshow('frame', frame)
+        # 영상 녹화 처리
         if keyboard.is_pressed('r'):
-            if recoding:
-                recoding = False
-                out.release()
-                print("Recoding stopped")
-            else:
-                out = cv2.VideoWriter('output.avi', fourcc, 20.0, (frame.shape[1], frame.shape[0]))
-                recoding = True
-                print("Recoding stated")
-        
-        if recoding:
-            out.write(frame)
-        
-        set_dc_motor(30, "forward")
-        # 0 -> 90도로 설정
-        if keyboard.is_pressed('0'):
-            angle = 90  # Immediately set angle to 90
-            set_servo_angle(angle)
-            print("Servo angle reset to 90 degrees.")
-            time.sleep(0.1)
+            out = cv2.VideoWriter('cam/output2.avi', fourcc, 20.0, (frame.shape[1], frame.shape[0]))
+            recoding = True
+            print("Recoding started")
+        if keyboard.is_pressed('q'):
+            recoding = False
+            out.release()
+            print("Recoding stopped")
 
+        if recoding:
+            out.write(frame) # frame 저장
+            cv2.imshow('frame', frame)  # 영상 표시
+            
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    if recoding:
+        out.release()
+    cv2.destroyAllWindows()
+
+# 키보드 입력에 따른 차량 제어
+def car_control():
+    # 서보 모터의 각도 초기화 -> 실제 모터도 90도로 세팅해야 함
+    angle = 90
+    set_servo_angle(angle)
+
+    print("Use arrow keys to control. Press '0' to reset servo angle to 90.")
+    while True:
         # DC모터 제어
         # up -> 속도 50, 전진
         if keyboard.is_pressed('up'):
-            set_dc_motor(50, "forward")  # set_dc_motor(속도, 방향("forward" or "backward"))
+            set_dc_motor(70, "forward")
             print("DC motor moving forward...")
         # down -> 속도 50, 후진
         elif keyboard.is_pressed('down'):
-            set_dc_motor(50, "backward")  # set_dc_motor(속도, 방향("forward" or "backward"))
+            set_dc_motor(50, "backward")
             print("DC motor moving backward...")
-            
         else:
             set_dc_motor(0, "forward")  # Stop motor
             print("DC motor stopped.")
 
         # 서보모터 제어
-        # 각도는 0 < angle <180
         if 0 < angle < 180:
             # left -> 현제 각도에서 -1도한 각도로 설정
             if keyboard.is_pressed('left'):
@@ -133,17 +134,32 @@ try:
             elif keyboard.is_pressed('right'):
                 angle += 1
                 set_servo_angle(angle)
-            print(f"현제 각도 : {angle}도")
+            print(f"Current angle: {angle} degrees")
 
+        # 0 -> 90도로 설정
+        if keyboard.is_pressed('0'):
+            angle = 90
+            set_servo_angle(angle)
+            print("Servo angle reset to 90 degrees.")
+            time.sleep(0.1)
 
-        time.sleep(0.05) # CPU 과부하 방지를 위한 짧은 지연, 인간의 입력 속도에 맞춤
+        time.sleep(0.02)  # CPU 과부하 방지를 위한 짧은 지연
 
-finally:
-    # PWM 정지 및 GPIO 정리
+# 메인 함수
+if __name__ == "__main__":
+    # 영상 촬영 스레드
+    video_thread = threading.Thread(target=video_capture, daemon=True)
+    video_thread.start()
+
+    # 차량 제어 스레드
+    car_thread = threading.Thread(target=car_control, daemon=True)
+    car_thread.start()
+
+    # 메인 스레드가 종료되지 않도록 대기
+    car_thread.join()
+    video_thread.join()
+
+    # GPIO 정리
     servo.stop()
     dc_motor_pwm.stop()
     GPIO.cleanup()
-    cap.release()
-    if recoding:
-        out.release()
-    cv2.destroyAllWindows
