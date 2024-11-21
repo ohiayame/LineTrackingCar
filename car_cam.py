@@ -50,6 +50,8 @@ dc_motor_pwm = GPIO.PWM(dc_motor_pwm_pin, 1000)  # 초당 1000(1000Hz)번의 PWM
 servo.start(0)
 dc_motor_pwm.start(0)
 
+angle = 90
+
 # 서보 각도를 설정하는 함수
 def set_servo_angle(angle):
     duty_cycle = 2 + (angle / 18)
@@ -69,13 +71,15 @@ def set_dc_motor(speed, direction):
 
 # 영상 촬영
 def video_capture():
+    global angle
     cap = cv2.VideoCapture(0)
     fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = None
     recoding = False
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
+    save_dir = "cam/angle"
+    image_number = 0
     while True:
         ret, frame = cap.read()
         if not ret or frame is None:
@@ -90,7 +94,10 @@ def video_capture():
             recoding = False
             out.release()
             print("Recoding stopped")
-
+        if keyboard.is_pressed('c'):
+            image_path = f"{save_dir}/{angle}_{image_number}.png"
+            cv2.imwrite(image_path, frame)
+            image_num += 1
         if recoding:
             out.write(frame) # frame 저장
             cv2.imshow('frame', frame)  # 영상 표시
@@ -106,7 +113,7 @@ def video_capture():
 # 키보드 입력에 따른 차량 제어
 def car_control():
     # 서보 모터의 각도 초기화 -> 실제 모터도 90도로 세팅해야 함
-    angle = 90
+    global angle
     set_servo_angle(angle)
 
     print("Use arrow keys to control. Press '0' to reset servo angle to 90.")
