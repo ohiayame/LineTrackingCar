@@ -137,11 +137,11 @@ def car_control():
         if 0 < angle < 180:
             # left -> 현제 각도에서 -1도한 각도로 설정
             if keyboard.is_pressed('left'):
-                angle -= 1
+                angle = 60
                 set_servo_angle(angle)
             # right -> 현제 각도에서 +1도한 각도로 설정
             elif keyboard.is_pressed('right'):
-                angle += 1
+                angle = 120
                 set_servo_angle(angle)
             print(f"Current angle: {angle} degrees")
 
