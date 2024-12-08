@@ -78,8 +78,8 @@ def video_capture():
     recoding = False
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    save_dir = "cam/angle"
-    image_number = 0
+    save_dir = "cam/angle" # 사진 저장하는 폴더 
+    image_num = 0
     while True:
         ret, frame = cap.read()
         if not ret or frame is None:
@@ -94,7 +94,9 @@ def video_capture():
             recoding = False
             out.release()
             print("Recoding stopped")
+        # 사진 저장
         if keyboard.is_pressed('c'):
+            image_number = str(image_num).zfill(5)
             image_path = f"{save_dir}/{angle}_{image_number}.png"
             cv2.imwrite(image_path, frame)
             image_num += 1
