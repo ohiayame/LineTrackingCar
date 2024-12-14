@@ -57,10 +57,10 @@ angle = 90
 def load_model():
     model = models.resnet18(pretrained=True)
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 3)  # 3개의 클래스 (0: 왼쪽, 1: 중간, 2: 오른쪽) 설정
+    model.fc = nn.Linear(num_ftrs, 5)  # 5개의 클래스 (0,1: 왼쪽, 2: 중간, 3,4: 오른쪽) 설정
     try:
         state_dict = torch.load("/home/aym/aym_car/best_model.pth")
-        if "fc.weight" in state_dict and state_dict["fc.weight"].shape[0] != 3:
+        if "fc.weight" in state_dict and state_dict["fc.weight"].shape[0] != 5:
             print("Adjusting model output layer to match checkpoint.")
             model.fc = nn.Linear(num_ftrs, state_dict["fc.weight"].shape[0])
         model.load_state_dict(state_dict, strict=False)
@@ -126,18 +126,24 @@ def car_control(model, device):
             if not ret:
                 continue
 
-            angle = 90  # 기본값 설정
+            angle = 86  # 기본값 설정
 
             pred_class = predict(frame, model, device)
             if pred_class == 0:
                 angle = 60
                 print("Predicted Class: 0, Turning Left")
             elif pred_class == 1:
-                angle = 90
-                print("Predicted Class: 1, Centered (90 degrees)")
+                angle = 75
+                print("Predicted Class: 1, Turning Left")
             elif pred_class == 2:
+                angle = 86
+                print("Predicted Class: 2, Centered (90 degrees)")
+            elif pred_class == 3:
+                angle = 105
+                print("Predicted Class: 3, Turning Right")
+            elif pred_class == 4:
                 angle = 120
-                print("Predicted Class: 2, Turning Right")
+                print("Predicted Class: 4, Turning Right")
 
             print(f"Current predicted angle: {angle}")
             set_servo_angle(angle)
@@ -159,6 +165,8 @@ def car_control(model, device):
 
 # 메인 함수
 if __name__ == "__main__":
+    if torch.cuda.is_available():
+        print("cuda is true")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model().to(device)
 
