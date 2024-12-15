@@ -6,24 +6,24 @@ import torch
 from torchvision import transforms
 
 # 화살표 그리기 함수
-def draw_arrow(frame, angle, predicted_angle, index):
+def draw_arrow(frame, predicted_angle, index):
     height, width, _ = frame.shape
     center_x, center_y = width // 2, height // 2
     length = 50  # 화살표 길이
 
     # 왼쪽 0도, 위쪽 90도, 오른쪽 180도를 반영하기 위한 각도 변환
-    angle_rad = np.radians(180 - angle)  # OpenCV의 기준에서 변환
+    # angle_rad = np.radians(180 - angle)  # OpenCV의 기준에서 변환
     predicted_angle_rad = np.radians(180 - predicted_angle)  # 예측된 각도 변환
 
-    end_x = int(center_x + length * np.cos(angle_rad))
-    end_y = int(center_y - length * np.sin(angle_rad))  # OpenCV의 y축은 아래로 증가하므로 음수로 변환
-    cv2.arrowedLine(frame, (center_x, center_y), (end_x, end_y), (0, 255, 0), 3, tipLength=0.3)
+    # end_x = int(center_x + length * np.cos(angle_rad))
+    # end_y = int(center_y - length * np.sin(angle_rad))  # OpenCV의 y축은 아래로 증가하므로 음수로 변환
+    # cv2.arrowedLine(frame, (center_x, center_y), (end_x, end_y), (0, 255, 0), 3, tipLength=0.3)
 
     predicted_end_x = int(center_x + length * np.cos(predicted_angle_rad))
     predicted_end_y = int(center_y - length * np.sin(predicted_angle_rad))
     cv2.arrowedLine(frame, (center_x, center_y), (predicted_end_x, predicted_end_y), (0, 0, 255), 3, tipLength=0.3)
 
-    text = f"Image: {index + 1}, Predicted Angle: {predicted_angle:.2f}"
+    text = f"Angle: {predicted_angle:.2f}"
     cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2, cv2.LINE_AA)
     return frame
 def transform_image(image):
@@ -66,11 +66,11 @@ def validate_images(folder_path, model):
             continue
 
         # 폴더 이름에서 각도 추출
-        try:
-            angle = int(os.path.basename(folder_path))  # 폴더 이름이 각도라고 가정
-        except ValueError:
-            print(f"Invalid folder name for angle: {folder_path}")
-            break
+        # try:
+        #     angle = int(os.path.basename(folder_path))  # 폴더 이름이 각도라고 가정
+        # except ValueError:
+        #     print(f"Invalid folder name for angle: {folder_path}")
+        #     break
 
         # 이미지 전처리
         # image_tensor = transform(image).unsqueeze(0)  # 배치 차원 추가
@@ -81,13 +81,17 @@ def validate_images(folder_path, model):
             # output = model(image_tensor)  # 모델 예측
             pred_class = predict(image, model)  # 예측된 각도 (예: 회전 각도)
             if pred_class == 0:
-                predicted_angle = 65
+                predicted_angle = 60
             elif pred_class == 1:
-                predicted_angle = 90    
+                predicted_angle = 75    
             elif pred_class == 2:
+                predicted_angle = 86
+            elif pred_class == 3:
+                predicted_angle = 105
+            elif pred_class == 4:
                 predicted_angle = 120
         # 화살표 추가 (실제 각도, 예측된 각도)
-        annotated_image = draw_arrow(image.copy(), angle, predicted_angle, total_index)
+        annotated_image = draw_arrow(image.copy(), predicted_angle, total_index)
 
         # 이미지 표시
         cv2.imshow("Image Validation", annotated_image)
@@ -141,12 +145,12 @@ class SimpleCNN(nn.Module):
 
 # 모델 로드 및 이미지 전처리 정의
 # 모델 정의
-model = SimpleCNN(num_classes=3)  # 모델 정의
-weights = torch.load("simple_cnn.pth")
+model = SimpleCNN(num_classes=5)  # 모델 정의
+weights = torch.load("best_model.pth")
 model.load_state_dict(weights, strict=False)  # strict=False로 로드 시, 이름이 맞지 않는 레이어는 무시하고 로드
 model.eval()
 
 
 # 실행 예시
-folder_path = r"C:/Users/USER/LineTrackingCar/Dataset/ResizeData/validation/65"  # 이미지 폴더 경로
+folder_path = r"C:/Users/USER/LineTrackingCar/Data/ResizeData/validation/3"  # 이미지 폴더 경로
 validate_images(folder_path, model)

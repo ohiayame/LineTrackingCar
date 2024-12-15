@@ -34,6 +34,7 @@ for command in commands:
 
 # GPIO 핀 설정
 servo_pin = 33  # 서보 모터 PWM핀
+
 dc_motor_pwm_pin = 32  # DC 모터의 속도를 조절 PWM핀
 dc_motor_dir_pin1 = 29  # GPIO 5, DC 모터의 방향을 제어 + (OUT1 + && IN1 + )
 dc_motor_dir_pin2 = 31  # GPIO 6, DC 모터의 방향을 제어 - (OUT2 - && IN2 - )
@@ -73,43 +74,29 @@ def set_dc_motor(speed, direction):
 def video_capture():
     global angle
     cap = cv2.VideoCapture(0)
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = None
     recoding = False
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-    save_dir = "cam/angle" # 사진 저장하는 폴더 
+    save_dir = f"cam/Dataset/{angle}"
     image_num = 0
+
     while True:
         ret, frame = cap.read()
         if not ret or frame is None:
             break
-        
-        # 영상 녹화 처리
-        if keyboard.is_pressed('r'):
-            out = cv2.VideoWriter('cam/output2.avi', fourcc, 20.0, (frame.shape[1], frame.shape[0]))
-            recoding = True
-            print("Recoding started")
-        if keyboard.is_pressed('q'):
-            recoding = False
-            out.release()
-            print("Recoding stopped")
-        # 사진 저장
+            
         if keyboard.is_pressed('c'):
             image_number = str(image_num).zfill(5)
-            image_path = f"{save_dir}/{angle}_{image_number}.png"
+            image_path = f"{save_dir}/image_{image_number}.png"
             cv2.imwrite(image_path, frame)
             image_num += 1
         if recoding:
-            out.write(frame) # frame 저장
             cv2.imshow('frame', frame)  # 영상 표시
             
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
     cap.release()
-    if recoding:
-        out.release()
     cv2.destroyAllWindows()
 
 # 키보드 입력에 따른 차량 제어
@@ -134,16 +121,23 @@ def car_control():
             print("DC motor stopped.")
 
         # 서보모터 제어
-        if 0 < angle < 180:
-            # left -> 현제 각도에서 -1도한 각도로 설정
-            if keyboard.is_pressed('left'):
-                angle = 60
-                set_servo_angle(angle)
-            # right -> 현제 각도에서 +1도한 각도로 설정
-            elif keyboard.is_pressed('right'):
-                angle = 120
-                set_servo_angle(angle)
-            print(f"Current angle: {angle} degrees")
+        if keyboard.is_pressed('1'):
+            angle = 60
+            set_servo_angle(angle)
+        elif keyboard.is_pressed('2'):
+            angle = 75
+            set_servo_angle(angle)
+        elif keyboard.is_pressed('4'):
+            angle = 105
+            set_servo_angle(angle)
+        elif keyboard.is_pressed('5'):
+            angle = 120
+            set_servo_angle(angle)
+        elif keyboard.is_pressed('3'):
+            angle = 86
+            set_servo_angle(angle)
+        print(f"Current predicted angle: {angle}")
+        time.sleep(0.02)
 
         # 0 -> 90도로 설정
         if keyboard.is_pressed('0'):
