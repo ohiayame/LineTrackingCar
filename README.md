@@ -52,7 +52,7 @@ Jetson Nano 기반으로 라인트레이싱 자율주행 자동차를 제작한 
 - 속도 제어: DC 모터 (전진/후진 제어)
   
 📷 실제 차량 사진  
-<img src="https://github.com/ohiayame/LineTrackingCar/assets/my_car.jpg" width="400"/>
+<img src="assets/img/my_car.png" width="300"/>
 
 ### 📸 데이터 수집
 - OpenCV로 실시간 프레임 촬영
@@ -65,7 +65,7 @@ Jetson Nano 기반으로 라인트레이싱 자율주행 자동차를 제작한 
 - 정규화: `Normalize(mean, std)` 사용 (범위: -0.5 ~ 0.5)
   
 🖼 전처리 과정 예시  
-<img src="https://github.com/ohiayame/LineTrackingCar/assets/resizing.png" width="600"/>
+<img src="assets/img/resizing.png" width="450"/>
 
 ---
 
@@ -88,11 +88,10 @@ Input → Conv → ReLU → Pooling → (반복) → FC → Output (각도 예�
   - 초기에는 특정 방향 데이터에 치우쳐 학습 불균형 발생
   - `Normalize(mean, std)` 범위를 **[-0.5, 0.5]**로 조정해 해결
     
-📊 처음 학습 결과 (과적합 발생)
-<img src="https://github.com/ohiayame/LineTrackingCar/assets/loss_before.png" width="400"/>
+| 📊 처음 학습 결과 (과적합 발생) | 📊 전처리 후 재학습 결과 |
+| --------------------- | ------------------- |
+|  <img src="assets/img/loss_before.png" width="300"/>  |  <img src="assets/img/loss_after.png" width="300"/>  | 
 
-📊 전처리 후 재학습 결과
-<img src="https://github.com/ohiayame/LineTrackingCar/assets/loss_after.png" width="400"/>
 
 ---
 
@@ -111,7 +110,7 @@ Input → Conv → ReLU → Pooling → (반복) → FC → Output (각도 예�
   - 작업 간 대기 시간 최소화로 실시간성 확보
 
 📊차선 각도에 따라 모델이 예측한 결과를 시각화한 이미지입니다.
-<img src="https://github.com/ohiayame/LineTrackingCar/assets/arrow_prediction.png" width="800"/>
+<img src="assets/img/arrow_prediction.png" width="800"/>
 
 ---
 
